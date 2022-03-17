@@ -1,9 +1,12 @@
 import React, {Component} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useParams} from 'react-router-dom';
 import axios from 'axios';
 import swal from 'sweetalert';
 
-class Addstudent extends Component 
+function withParams(Component) {
+  return props => <Component {...props} params={useParams()} />;
+}
+class Editstudent extends Component 
 
 {
   state = {
@@ -11,40 +14,41 @@ class Addstudent extends Component
     department : '',
     email : '',
     phone : '',
-    error_list : [],
   }
   handleInput = (e) => {
          this.setState({
             [e.target.name] : e.target.value,
          });
   }
-  saveStudent = async (e) => {
-       try {
-        e.preventDefault();
-        const res = await axios.post('http://127.0.0.1:8000/api/add-student', this.state);
-        if(res.data.status === 200){
-           swal({
-             title: "Success!",
-             text: res.data.message,
-             icon: "success",
-             button: "Ok",
-           });
-           this.setState({
-             name : '',
-             department : '',
-             email : '',
-             phone : '',
-           });
-        }else {
-          console.log(res.data.validate_error)
-         this.setState({
-           error_list : res.data.validate_error,
-           
-         });
-       }
-       } catch (error) {
-         
-       }
+  async componentDidMount (){
+    const student_id = this.props.params.id;
+      const res = await axios.get(`http://127.0.0.1:8000/api/edit-student/${student_id}`);
+      if(res.data.status === 200){
+        this.setState({
+          name : res.data.student.name,
+          department : res.data.student.department,
+          email : res.data.student.email,
+          phone : res.data.student.phone,
+        });
+     }
+  }
+  editStudent = async (e) => {
+       e.preventDefault();
+       document.getElementById('btn-id').disabled = true;
+       document.getElementById('btn-id').innerText = 'Updating';
+       const student_id = this.props.params.id;
+       const res = await axios.put(`http://127.0.0.1:8000/api/edit-student/${student_id}`, this.state);
+       if(res.data.status === 200){
+         // console.log(res.data.message);
+         swal({
+          title: "Update!",
+          text: res.data.message,
+          icon: "success",
+          button: "Ok",
+        });
+          document.getElementById('btn-id').disabled = false;
+          document.getElementById('btn-id').innerText = 'Updated Student';
+       } 
   }
   render (){
       return (
@@ -54,36 +58,32 @@ class Addstudent extends Component
          <div className='card'>
          <div className='card-header'>
         <h2>
-        Add Student
+        Update Student
             
             <Link to={'/'} className='btn btn-info float-end'>Back</Link>
         </h2>
 
         </div>
         <div className='card-body'>
-          <form onSubmit={this.saveStudent}>
+          <form onSubmit={this.editStudent}>
             <div className='form-group mb-3'>
               <label>Name</label>
                <input type='text' className='form-control' name='name' onChange={this.handleInput} value={this.state.name} placeholder='name' />
-               <span className='text-danger'>{this.state.error_list.name}</span>
             </div>
             <div className='form-group mb-3'>
             <label>Department</label>
                <input type='text' className='form-control' name='department' onChange={this.handleInput} value={this.state.department} placeholder='Department' />
-               <span className='text-danger'>{this.state.error_list.department}</span>
             </div>
             <div className='form-group mb-3'>
               <label>Email</label>
                <input type='text' className='form-control' name='email' onChange={this.handleInput} value={this.state.email} placeholder='Email' />
-               <span className='text-danger'>{this.state.error_list.email}</span>
             </div>
             <div className='form-group mb-3'>
             <label>Phone</label>
                <input type='text' className='form-control' name='phone' onChange={this.handleInput} value={this.state.phone} placeholder='Phone' />
-               <span className='text-danger'>{this.state.error_list.phone}</span>
             </div>
             <div className='form-group mb-3'>
-               <button type='submit' className='btn btn-success'>Submit</button>
+               <button id='btn-id' type='submit' className='btn btn-success'>Update</button>
             </div>
           </form>
         </div>
@@ -95,4 +95,4 @@ class Addstudent extends Component
   }
 }
 
-export default Addstudent;
+export default withParams(Editstudent);
